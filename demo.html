@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8" />
+  <title>NeuroLens 問卷 Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    pre { background: #f5f5f5; padding: 1em; border-radius: 6px; }
+    button { margin-top: 1em; padding: 0.5em 1em; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h2>NeuroLens 問卷 Demo</h2>
+
+  <h3>問卷題目：</h3>
+  <pre id="questions">Loading...</pre>
+
+  <button id="submit">送出 Demo 答案</button>
+
+  <script>
+    const API = "https://neuro-lens-api.onrender.com";
+
+    // 拉問卷
+    fetch(API + "/api/v1/questions")
+      .then(r => r.json())
+      .then(js => {
+        document.getElementById("questions").textContent = JSON.stringify(js, null, 2);
+        // 預設 Demo 答案
+        window._demoAnswers = {
+          Q1: 4, Q2: "yes", Q3: 3, Q4: 7, Q5: 5, Q6: "no", Q7: 4, Q8: ["運動","閱讀"]
+        };
+      })
+      .catch(err => {
+        document.getElementById("questions").textContent = "❌ 拉問卷失敗: " + err;
+      });
+
+    // Demo 提交
+    document.getElementById("submit").onclick = async () => {
+      const res = await fetch(API + "/api/v1/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: window._demoAnswers,
+          meta: { userId: "demo-001" }
+        })
+      });
+      const txt = await res.text();
+      alert("已送出：\n" + txt);
+    };
+  </script>
+</body>
+</html>
