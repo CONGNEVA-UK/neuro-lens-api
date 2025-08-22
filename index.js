@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- 靜態檔案支援 (serve public folder) ---
+app.use(express.static(path.join(__dirname, "public")));
+
 // --- 測試用 API ---
 app.get("/api/v1/ping", (req, res) => {
   console.log("PING hit");
