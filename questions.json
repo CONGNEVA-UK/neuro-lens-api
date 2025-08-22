@@ -1,0 +1,65 @@
+[
+  {
+    "id": "Q1",
+    "section": "Attention",
+    "type": "scale",
+    "label": "你幾多時會覺得難以專注？",
+    "scaleMin": 1,
+    "scaleMax": 5,
+    "anchors": ["很少", "非常常見"]
+  },
+  {
+    "id": "Q2",
+    "section": "Working Memory",
+    "type": "yesno",
+    "label": "你會唔會經常記唔到啱啱講過/做過啲咩？"
+  },
+  {
+    "id": "Q3",
+    "section": "Processing Speed",
+    "type": "scale",
+    "label": "你覺得自己反應速度點？",
+    "scaleMin": 1,
+    "scaleMax": 5,
+    "anchors": ["好慢", "好快"]
+  },
+  {
+    "id": "Q4",
+    "section": "Sleep",
+    "type": "number",
+    "label": "你平均每晚瞓幾多個鐘？",
+    "min": 0,
+    "max": 24
+  },
+  {
+    "id": "Q5",
+    "section": "Mood",
+    "type": "scale",
+    "label": "最近一星期整體心情點？",
+    "scaleMin": 1,
+    "scaleMax": 5,
+    "anchors": ["好差", "好好"]
+  },
+  {
+    "id": "Q6",
+    "section": "Vision Fatigue",
+    "type": "yesno",
+    "label": "長時間用電子螢幕之後會唔會覺得眼攰或頭痛？"
+  },
+  {
+    "id": "Q7",
+    "section": "Executive",
+    "type": "scale",
+    "label": "你處理多步驟工作時覺得幾吃力？",
+    "scaleMin": 1,
+    "scaleMax": 5,
+    "anchors": ["唔吃力", "非常吃力"]
+  },
+  {
+    "id": "Q8",
+    "section": "Lifestyle",
+    "type": "multi",
+    "label": "平時放鬆方式（可多選）",
+    "options": ["運動", "聽歌", "打機", "社交", "閱讀", "其他"]
+  }
+]
