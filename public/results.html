@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>NeuroLens Results</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans TC', Arial; padding: 24px; max-width: 900px; margin: auto; }
+    h1 { margin-bottom: 8px; }
+    .card { border: 1px solid #eee; border-radius: 12px; padding: 16px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    code, pre { background: #f6f8fa; padding: 2px 6px; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>NeuroLens Results 📊</h1>
+  <p>這頁會整理 <code>/api/v1/stats</code> 的統計結果（平均分、Yes/No、數值平均）。</p>
+
+  <div id="root" class="card">Loading…</div>
+
+  <script>
+    async function load() {
+      const el = document.getElementById('root');
+      try {
+        const res = await fetch('/api/v1/stats');
+        const data = await res.json();
+
+        const sections = [];
+
+        sections.push(`<p><strong>提交份數：</strong> ${data.count}</p>`);
+
+        if (data.scale && Object.keys(data.scale).length) {
+          let rows = Object.entries(data.scale).map(([qid, s]) =>
+            `<tr><td>${qid}</td><td>${s.n}</td><td>${s.avg}</td></tr>`).join('');
+          sections.push(`
+            <h3>量表題（平均分）</h3>
+            <table><thead><tr><th>題號</th><th>樣本數</th><th>平均</th></tr></thead>
+            <tbody>${rows}</tbody></table>
+          `);
+        }
+
+        if (data.yesno && Object.keys(data.yesno).length) {
+          let rows = Object.entries(data.yesno).map(([qid, s]) =>
+            `<tr><td>${qid}</td><td>${s.yes}</td><td>${s.no}</td></tr>`).join('');
+          sections.push(`
+            <h3>是/否 題</h3>
+            <table><thead><tr><th>題號</th><th>Yes</th><th>No</th></tr></thead>
+            <tbody>${rows}</tbody></table>
+          `);
+        }
+
+        if (data.number && Object.keys(data.number).length) {
+          let rows = Object.entries(data.number).map(([qid, s]) =>
+            `<tr><td>${qid}</td><td>${s.n}</td><td>${s.avg}</td><td>${s.min}</td><td>${s.max}</td></tr>`).join('');
+          sections.push(`
+            <h3>數值題</h3>
+            <table><thead><tr><th>題號</th><th>樣本數</th><th>平均</th><th>最小</th><th>最大</th></tr></thead>
+            <tbody>${rows}</tbody></table>
+          `);
+        }
+
+        el.innerHTML = sections.join('');
+      } catch (e) {
+        el.textContent = '讀取失敗：' + e.message;
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
