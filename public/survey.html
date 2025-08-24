@@ -1,84 +1,123 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-HK">
 <head>
   <meta charset="utf-8" />
-  <title>NeuroLens – Survey Demo</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NeuroLens 問卷 Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, Arial; padding: 24px; }
-    h1 { margin-top: 0; }
-    .q { padding: 12px 0; border-bottom: 1px solid #eee; }
-    button { margin-top: 16px; padding: 8px 14px; }
-    #out { margin-top: 20px; white-space: pre-wrap; }
+    :root { --bg:#0b0f1a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --pri:#60a5fa; --line:#1f2937; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Arial}
+    .wrap{max-width:860px;margin:0 auto;padding:28px}
+    h1{margin:0 0 8px;font-size:22px} p.sub{margin:0 0 18px;color:var(--muted)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px}
+    .sec{margin:18px 0 6px;font-weight:600;color:#cbd5e1}
+    .q{padding:14px 0;border-bottom:1px solid var(--line)}
+    .q:last-child{border-bottom:0}
+    .lab{display:block;margin:0 0 10px}
+    .scale{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .badge{background:#0f172a;border:1px solid var(--line);padding:6px 10px;border-radius:999px;cursor:pointer;user-select:none}
+    .badge input{margin-right:6px}
+    input[type="number"]{width:120px;padding:8px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--text)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .actions{display:flex;gap:12px;margin-top:18px}
+    button{padding:10px 16px;border-radius:10px;border:1px solid #1e293b;background:var(--pri);color:#0b1020;font-weight:600;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .note{color:var(--muted);font-size:14px;margin-top:6px}
+    .result{white-space:pre-wrap;background:#0b1220;border:1px solid var(--line);padding:12px;border-radius:10px;margin-top:12px}
+    .hr{height:1px;background:var(--line);margin:16px 0}
+    a{color:#93c5fd;text-decoration:none}
   </style>
 </head>
 <body>
-  <h1>NeuroLens Survey Demo 🚀</h1>
-  <p>This page loads questions from <code>/api/v1/questions</code> and posts answers to <code>/api/v1/submit</code>.</p>
+  <div class="wrap">
+    <h1>NeuroLens 問卷 Demo</h1>
+    <p class="sub">此頁會從 <code>/api/v1/questions</code> 載入題目並渲染為乾淨表單，提交至 <code>/api/v1/submit</code>。</p>
 
-  <form id="form"></form>
-  <button id="send">Submit</button>
+    <div class="card">
+      <div id="formBox">載入中…</div>
+      <div class="actions">
+        <button id="btnSubmit" disabled>提交</button>
+        <button id="btnReload">重新載入</button>
+      </div>
+      <div class="note">提示：Likert 量表選項為 1–5；Yes/No 為二選一；多選題可多選。</div>
+      <div id="out" class="result" style="display:none"></div>
+    </div>
 
-  <div id="out"></div>
+    <div class="hr"></div>
+    <p class="sub">健康檢查：<a href="/api/v1/ping" target="_blank">/api/v1/ping</a></p>
+  </div>
 
-  <script>
-    const formEl = document.getElementById('form');
-    const outEl  = document.getElementById('out');
+<script>
+const API = ""; // 同域就留空；若跨域可填 Render URL
 
-    async function loadQuestions() {
-      const res = await fetch('/api/v1/questions');
-      const qs = await res.json();
+const el = sel => document.querySelector(sel);
+const formBox = el("#formBox");
+const btnSubmit = el("#btnSubmit");
+const btnReload = el("#btnReload");
+const out = el("#out");
+let questions = [];
 
-      qs.forEach(q => {
-        const wrap = document.createElement('div');
-        wrap.className = 'q';
+function sectionHeader(name){
+  const d = document.createElement("div");
+  d.className = "sec";
+  d.textContent = name;
+  return d;
+}
 
-        const label = document.createElement('label');
-        label.textContent = `${q.id} ${q.label}`;
-        label.style.display = 'block';
-        wrap.appendChild(label);
+function qBlock(q){
+  const wrap = document.createElement("div");
+  wrap.className = "q";
+  const lab = document.createElement("label");
+  lab.className = "lab";
+  lab.htmlFor = q.id;
+  lab.textContent = `${q.id}｜${q.label}`;
+  wrap.appendChild(lab);
 
-        let input;
-        if (q.type === 'scale') {
-          input = document.createElement('input');
-          input.type = 'range';
-          input.min = q.scaleMin ?? 1;
-          input.max = q.scaleMax ?? 5;
-          input.value = Math.round((input.min + input.max)/2);
-        } else if (q.type === 'yesno') {
-          input = document.createElement('select');
-          ['No','Yes'].forEach((t,i)=>{
-            const o = document.createElement('option');
-            o.value = i === 1 ? 1 : 0;
-            o.textContent = t;
-            input.appendChild(o);
-          });
-        } else {
-          input = document.createElement('input');
-          input.type = 'text';
-        }
-        input.name = q.id;
-        wrap.appendChild(input);
-
-        formEl.appendChild(wrap);
-      });
+  if (q.type === "scale") {
+    const row = document.createElement("div"); row.className = "row";
+    const min = document.createElement("span"); min.textContent = q.anchors?.[0] ?? "低";
+    const max = document.createElement("span"); max.textContent = q.anchors?.[1] ?? "高";
+    const scale = document.createElement("div"); scale.className = "scale";
+    const minV = Number(q.scaleMin ?? 1), maxV = Number(q.scaleMax ?? 5);
+    for (let v=minV; v<=maxV; v++){
+      const id = `${q.id}_${v}`;
+      const lbl = document.createElement("label"); lbl.className="badge";
+      const inp = document.createElement("input"); inp.type="radio"; inp.name=q.id; inp.value=String(v); inp.id=id;
+      lbl.appendChild(inp); lbl.append(String(v));
+      scale.appendChild(lbl);
     }
-
-    document.getElementById('send').addEventListener('click', async () => {
-      const fd = new FormData(formEl);
-      const answers = [];
-      for (const [k,v] of fd.entries()) answers.push({ id: k, value: v });
-
-      const res = await fetch('/api/v1/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers })
-      });
-      const data = await res.json();
-      outEl.textContent = JSON.stringify(data, null, 2);
+    row.append(min, scale, max);
+    wrap.appendChild(row);
+  }
+  else if (q.type === "yesno") {
+    const box = document.createElement("div"); box.className="badges";
+    [["0","否"],["1","是"]].forEach(([val,txt])=>{
+      const id = `${q.id}_${val}`;
+      const lbl = document.createElement("label"); lbl.className="badge";
+      const inp = document.createElement("input"); inp.type="radio"; inp.name=q.id; inp.value=val; inp.id=id;
+      lbl.appendChild(inp); lbl.append(txt);
+      box.appendChild(lbl);
     });
-
-    loadQuestions();
-  </script>
-</body>
-</html>
+    wrap.appendChild(box);
+  }
+  else if (q.type === "number") {
+    const num = document.createElement("input");
+    num.type="number"; num.name=q.id; num.id=q.id;
+    if (q.min!=null) num.min=q.min;
+    if (q.max!=null) num.max=q.max;
+    wrap.appendChild(num);
+  }
+  else if (q.type === "multi") {
+    const box = document.createElement("div"); box.className="badges";
+    (q.options || []).forEach((opt, i)=>{
+      const id = `${q.id}_${i}`;
+      const lbl = document.createElement("label"); lbl.className="badge";
+      const inp = document.createElement("input"); inp.type="checkbox"; inp.name=q.id; inp.value=opt; inp.id=id;
+      lbl.appendChild(inp); lbl.append(opt);
+      box.appendChild(lbl);
+    });
+    wrap.appendChild(box);
+  }
+  else {
+    const txt = document
