@@ -1,45 +1,45 @@
-// index.js (FINAL OVERWRITE)
+// index.js (FINAL with pretty switch)
 
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-// --- App setup ---
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (HTML/CSS/JS) from /public
+// 靜態檔案
 app.use(express.static(path.join(__dirname, "public")));
 
-// 根路由：簡單健康檢查（純文字）
+// 小工具：根據 ?pretty=1 決定是否美化輸出
+function sendJson(req, res, data) {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  const pretty = "pretty" in req.query; // 有任何值都當開啟
+  res.send(JSON.stringify(data, null, pretty ? 2 : 0));
+}
+
+// 根路由
 app.get("/", (_req, res) => {
   res.send("✅ NeuroLens API is running!");
 });
 
-// PING：回傳乾淨 JSON（不用 Render 的 pretty viewer）
-app.get("/api/v1/ping", (_req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify({ msg: "NeuroLens API is alive 🚀" }));
+// PING
+app.get("/api/v1/ping", (req, res) => {
+  sendJson(req, res, { msg: "NeuroLens API is alive 🚀" });
 });
 
-// 問卷題目：讀取本地 questions.json 並回傳乾淨 JSON
-app.get("/api/v1/questions", (_req, res) => {
-  // 用 require 讀本地 JSON（部署後足夠；如需熱更新可改用 fs.readFile）
+// 題目
+app.get("/api/v1/questions", (req, res) => {
   const questions = require("./questions.json");
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify(questions));
+  sendJson(req, res, questions);
 });
 
-// 表單提交示例：接收答案（你之後可改為寫入 DB）
+// 提交
 app.post("/api/v1/submit", (req, res) => {
-  const payload = req.body || {};
-  // 這裡先回聲（echo）返你傳入的資料
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify({ ok: true, received: payload, ts: Date.now() }));
+  sendJson(req, res, { ok: true, received: req.body || {}, ts: Date.now() });
 });
 
-// --- Listen 必須最後 ---
+// 監聽
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API up at http://localhost:${PORT}`);
