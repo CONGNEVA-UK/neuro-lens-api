@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NeuroLens – Survey Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial; padding: 24px; }
+    h1 { margin-top: 0; }
+    .q { padding: 12px 0; border-bottom: 1px solid #eee; }
+    button { margin-top: 16px; padding: 8px 14px; }
+    #out { margin-top: 20px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>NeuroLens Survey Demo 🚀</h1>
+  <p>This page loads questions from <code>/api/v1/questions</code> and posts answers to <code>/api/v1/submit</code>.</p>
+
+  <form id="form"></form>
+  <button id="send">Submit</button>
+
+  <div id="out"></div>
+
+  <script>
+    const formEl = document.getElementById('form');
+    const outEl  = document.getElementById('out');
+
+    async function loadQuestions() {
+      const res = await fetch('/api/v1/questions');
+      const qs = await res.json();
+
+      qs.forEach(q => {
+        const wrap = document.createElement('div');
+        wrap.className = 'q';
+
+        const label = document.createElement('label');
+        label.textContent = `${q.id} ${q.label}`;
+        label.style.display = 'block';
+        wrap.appendChild(label);
+
+        let input;
+        if (q.type === 'scale') {
+          input = document.createElement('input');
+          input.type = 'range';
+          input.min = q.scaleMin ?? 1;
+          input.max = q.scaleMax ?? 5;
+          input.value = Math.round((input.min + input.max)/2);
+        } else if (q.type === 'yesno') {
+          input = document.createElement('select');
+          ['No','Yes'].forEach((t,i)=>{
+            const o = document.createElement('option');
+            o.value = i === 1 ? 1 : 0;
+            o.textContent = t;
+            input.appendChild(o);
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = 'text';
+        }
+        input.name = q.id;
+        wrap.appendChild(input);
+
+        formEl.appendChild(wrap);
+      });
+    }
+
+    document.getElementById('send').addEventListener('click', async () => {
+      const fd = new FormData(formEl);
+      const answers = [];
+      for (const [k,v] of fd.entries()) answers.push({ id: k, value: v });
+
+      const res = await fetch('/api/v1/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers })
+      });
+      const data = await res.json();
+      outEl.textContent = JSON.stringify(data, null, 2);
+    });
+
+    loadQuestions();
+  </script>
+</body>
+</html>
