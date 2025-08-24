@@ -15,7 +15,7 @@
 </head>
 <body>
   <h1>NeuroLens Results 📊</h1>
-  <p>這頁會整理 <code>/api/v1/stats</code> 的統計結果（平均分、Yes/No、數值平均）。</p>
+  <p>這頁整理 <code>/api/v1/stats</code> 的統計結果。</p>
 
   <div id="root" class="card">Loading…</div>
 
@@ -27,7 +27,6 @@
         const data = await res.json();
 
         const sections = [];
-
         sections.push(`<p><strong>提交份數：</strong> ${data.count}</p>`);
 
         if (data.scale && Object.keys(data.scale).length) {
